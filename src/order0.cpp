@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
 #include "../vendor/csv.hpp"
 
@@ -15,6 +16,7 @@ int main()
 
     std::map<std::string, std::map<std::string, std::size_t>> counts;
     std::map<std::string, std::size_t> totals;
+    std::set<std::string> vocabulary{"<UNK>"};
 
     for (csv::CSVRow& row : reader)
     {
@@ -23,9 +25,12 @@ int main()
 
         ++counts[genre][chord];
         ++totals[genre];
+        vocabulary.insert(chord);
     }
 
-    std::ofstream output("results/order0_raw.tsv");
+    const std::size_t category_count = vocabulary.size();
+
+    std::ofstream output("results/order0_smoothed.tsv");
 
     if (!output)
     {
@@ -34,27 +39,32 @@ int main()
     }
 
     output << "genre\tchord\tcount\tprobability\n";
-    output << std::setprecision(10);
+    output << std::setprecision(17);
 
     for (const auto& genre_entry : counts)
     {
         const std::string& genre = genre_entry.first;
 
-        for (const auto& chord_entry : genre_entry.second)
+        for (const std::string& chord : vocabulary)
         {
+            std::size_t count = counts[genre][chord];
+
             double probability =
-                static_cast<double>(chord_entry.second) / totals[genre];
+                (static_cast<double>(count) + 1.0) /
+                (static_cast<double>(totals[genre]) + category_count);
 
             output << genre << '\t'
-                   << chord_entry.first << '\t'
-                   << chord_entry.second << '\t'
+                   << chord << '\t'
+                   << count << '\t'
                    << probability << '\n';
         }
 
         std::cout << genre << ": "
-                  << totals[genre] << " chord tokens, "
-                  << genre_entry.second.size() << " distinct labels\n";
+                  << totals[genre] << " training chord tokens\n";
     }
+
+    std::cout << "Shared vocabulary: "
+              << category_count << " categories, including <UNK>\n";
 
     return 0;
 }
