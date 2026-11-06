@@ -6,17 +6,34 @@ predicted <- data$predicted_genre
 confusion <- table(actual, predicted)
 print(confusion)
 
-correct <- actual == predicted
-accuracy <- sum(correct) / length(correct)
-print(100 * accuracy)
+number_songs <- length(actual)
+number_correct <- 0
 
-genres <- c("electronic", "jazz", "rock")
-genre_accuracy <- numeric(3)
-
-for (i in 1:3) {
-    selected <- actual == genres[i]
-    genre_accuracy[i] <- sum(correct[selected]) / sum(selected)
+for (i in 1:number_songs) {
+    if (actual[i] == predicted[i]) {
+        number_correct <- number_correct + 1
+    }
 }
 
-names(genre_accuracy) <- genres
-print(100 * genre_accuracy)
+accuracy <- number_correct / number_songs
+cat("\noverall accuracy:", 100 * accuracy, "%\n")
+
+genres <- c("electronic", "jazz", "rock")
+
+for (genre in genres) {
+    genre_songs <- 0
+    genre_correct <- 0
+
+    for (i in 1:number_songs) {
+        if (actual[i] == genre) {
+            genre_songs <- genre_songs + 1
+
+            if (actual[i] == predicted[i]) {
+                genre_correct <- genre_correct + 1
+            }
+        }
+    }
+
+    accuracy <- genre_correct / genre_songs
+    cat(genre, ":", 100 * accuracy, "%\n")
+}
